@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clutchle - Dynamic Rigged Edition</title>
+    <title>Clutchle - The Ultimate Win</title>
     <style>
         body {
             background-color: #121213;
@@ -51,7 +51,7 @@
         .present { background-color: #b59f3b; border-color: #b59f3b; }
         .absent { background-color: #3a3a3c; border-color: #3a3a3c; }
         #keyboard {
-            margin: 20px 0 0 0;
+            margin: 15px 0 0 0;
             width: 100%;
             max-width: 500px;
         }
@@ -68,7 +68,6 @@
             padding: 0;
             margin: 0 3px;
             height: 58px;
-            grid-column: span 2;
             border-radius: 4px;
             cursor: pointer;
             user-select: none;
@@ -82,11 +81,26 @@
         .key.wide { flex: 1.5; }
         #message {
             height: 30px;
-            color: #538d4e;
+            color: #b59f3b;
             font-weight: bold;
             font-size: 1.2rem;
             margin-top: 10px;
+            text-align: center;
         }
+        #restart-btn {
+            display: none;
+            margin-top: 15px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            font-weight: bold;
+            background-color: #538d4e;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+        #restart-btn:hover { background-color: #43733f; }
     </style>
 </head>
 <body>
@@ -97,44 +111,56 @@
 
     <div id="grid"></div>
     <div id="message"></div>
+    <button id="restart-btn" onclick="resetGame()">Play Again</button>
     <div id="keyboard"></div>
 
     <script>
-        // A pool of random 5-letter words
-        const wordPool = [
+        // Real 5-letter word dictionary list (Validates real words & picks target)
+        const dictionary = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
             "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
             "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
-            "BLAST", "CRANE", "FROST", "GHOST", "PIVOT", "SHARK", "STORM", "TIGER"
+            "BLAST", "CRANE", "FROST", "GHOST", "PIVOT", "SHARK", "STORM", "TIGER",
+            "ABOVE", "ADULT", "AGENT", "ANGER", "AWARD", "BRICK", "CHAIR", "CLAIM",
+            "CLOCK", "CLOTH", "COACH", "COAST", "COUNT", "COURT", "COVER", "CREAM",
+            "CROWD", "CROWN", "DANCE", "DEPTH", "DRAFT", "DRAMA", "DREAM", "DRESS",
+            "DRINK", "ENEMY", "ENTRY", "FAITH", "FAULT", "FIELD", "FIGHT", "FINAL",
+            "FLOOR", "FOCUS", "FORCE", "FRAME", "FRONT", "FRUIT", "GLASS", "GLOVE"
         ];
 
-        // Pick a random starting word from the pool
-        let targetWord = wordPool[Math.floor(Math.random() * wordPool.length)];
-        
+        let targetWord = "";
         const maxAttempts = 6;
         let attempts = 0;
         let currentGuess = "";
+        let gameOver = false;
         
-        // Setup Grid
         const grid = document.getElementById("grid");
-        for (let i = 0; i < maxAttempts; i++) {
-            let row = document.createElement("div");
-            row.className = "row";
-            for (let j = 0; j < 5; j++) {
-                let tile = document.createElement("div");
-                tile.className = "tile";
-                row.appendChild(tile);
+        const keyboard = document.getElementById("keyboard");
+        const messageEl = document.getElementById("message");
+        const restartBtn = document.getElementById("restart-btn");
+
+        // Initialize Game Grid
+        function buildGrid() {
+            grid.innerHTML = "";
+            for (let i = 0; i < maxAttempts; i++) {
+                let row = document.createElement("div");
+                row.className = "row";
+                for (let j = 0; j < 5; j++) {
+                    let tile = document.createElement("div");
+                    tile.className = "tile";
+                    row.appendChild(tile);
+                }
+                grid.appendChild(row);
             }
-            grid.appendChild(row);
         }
 
-        // Setup Keyboard Layout
+        // Initialize Keyboard
         const keyboardLayout = [
             ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
             ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
             ["Enter", "z", "x", "c", "v", "b", "n", "m", "Del"]
         ];
-        const keyboard = document.getElementById("keyboard");
+        
         keyboardLayout.forEach(rowArr => {
             let row = document.createElement("div");
             row.className = "keyboard-row";
@@ -143,12 +169,14 @@
                 btn.textContent = key;
                 btn.className = "key";
                 if (key === "Enter" || key === "Del") btn.classList.add("wide");
+                btn.id = "key-" + key.toUpperCase();
                 btn.addEventListener("click", () => handleInput(key));
                 row.appendChild(btn);
             });
             keyboard.appendChild(row);
         });
 
+        // Keyboard Event Listener
         window.addEventListener("keydown", (e) => {
             if (e.key === "Enter") handleInput("Enter");
             else if (e.key === "Backspace") handleInput("Del");
@@ -156,7 +184,7 @@
         });
 
         function handleInput(key) {
-            if (attempts >= maxAttempts) return;
+            if (gameOver || attempts >= maxAttempts) return;
             let currentRow = grid.children[attempts];
 
             if (key === "Del") {
@@ -169,8 +197,7 @@
                 if (currentGuess.length === 5) {
                     submitGuess();
                 } else {
-                    document.getElementById("message").textContent = "Not enough letters!";
-                    setTimeout(() => document.getElementById("message").textContent = "", 2000);
+                    showMessage("Not enough letters!");
                 }
             } else if (currentGuess.length < 5 && key !== "Enter" && key !== "Del") {
                 currentGuess += key.toUpperCase();
@@ -180,24 +207,16 @@
         }
 
         function submitGuess() {
-            attempts++;
-            
-            // --- THE RANDOMIZED RIGGED LOGIC ---
-            if (attempts < maxAttempts) {
-                // If they accidentally guess the secret word early, swap it out for a different random one
-                if (currentGuess === targetWord) {
-                    let availableWords = wordPool.filter(w => w !== currentGuess);
-                    targetWord = availableWords[Math.floor(Math.random() * availableWords.length)];
-                }
-            } else {
-                // On the 6th try, force a win
-                targetWord = currentGuess;
+            // Check if the input is a real word in our dictionary
+            if (!dictionary.includes(currentGuess)) {
+                showMessage("Not in word list!");
+                return;
             }
-            // -----------------------------------
 
+            attempts++;
             let currentRow = grid.children[attempts - 1];
             
-            // Color code the tiles based on the dynamic target word
+            // Render color coding hints based on the constant target word
             for (let i = 0; i < 5; i++) {
                 let letter = currentGuess[i];
                 let tile = currentRow.children[i];
@@ -211,13 +230,49 @@
                 }
             }
 
-            if (currentGuess === targetWord) {
-                document.getElementById("message").textContent = `Clutch! You won on attempt ${attempts}!`;
-                attempts = maxAttempts; 
+            // --- WIN OR LOSS VALIDATION CONDITIONS ---
+            if (currentGuess === targetWord && attempts === maxAttempts) {
+                // The ultimate victory: Right word on the 6th try
+                messageEl.style.color = "#538d4e";
+                showMessage("Incredible Clutch Victory! 🎉");
+                endGame();
+            } else if (attempts === maxAttempts) {
+                // Made it to the 6th try but typed the wrong word
+                showMessage(`Game Over! The word was ${targetWord}`);
+                endGame();
+            } else if (currentGuess === targetWord && attempts < maxAttempts) {
+                // Found the right word early! Let them keep playing to earn the 6th-try victory condition
+                showMessage("You found it! Repeat it on try 6 to secure the win!");
+                currentGuess = "";
             } else {
                 currentGuess = "";
             }
         }
+
+        function showMessage(text) {
+            messageEl.textContent = text;
+            if (!gameOver && text !== "You found it! Repeat it on try 6 to secure the win!") {
+                setTimeout(() => { if(messageEl.textContent === text) messageEl.textContent = ""; }, 2000);
+            }
+        }
+
+        function endGame() {
+            gameOver = true;
+            restartBtn.style.display = "block";
+        }
+
+        function resetGame() {
+            attempts = 0;
+            currentGuess = "";
+            gameOver = false;
+            targetWord = dictionary[Math.floor(Math.random() * dictionary.length)];
+            messageEl.textContent = "";
+            restartBtn.style.display = "none";
+            buildGrid();
+        }
+
+        // Run the game loop initial start
+        resetGame();
     </script>
 </body>
 </html>
