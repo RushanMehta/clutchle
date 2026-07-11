@@ -53,6 +53,7 @@
             font-weight: bold;
             text-transform: uppercase;
             user-select: none;
+            transition: background-color 0.3s ease, border-color 0.3s ease;
         }
         .tile.filled { border-color: #565758; }
         
@@ -128,13 +129,29 @@
     <div id="keyboard"></div>
 
     <script>
-        let dictionary = []; 
+        let dictionary = []; // Massive verification list loaded from the internet
         let targetWord = "";
         const maxAttempts = 6;
         let attempts = 0;
         let currentGuess = "";
         let gameOver = false;
+        let isRevealing = false; // Prevents typing while tiles are animating
         
+        // A curated list of common, recognizable 5-letter answer words
+        const commonAnswers = [
+            "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
+            "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
+            "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
+            "BLAST", "CRANE", "FROST", "GHOST", "PIVOT", "SHARK", "STORM", "TIGER",
+            "ABOVE", "ADULT", "AGENT", "ANGER", "AWARD", "BRICK", "CHAIR", "CLAIM",
+            "CLOCK", "CLOTH", "COACH", "COAST", "COUNT", "COURT", "COVER", "CREAM",
+            "CROWD", "CROWN", "DANCE", "DEPTH", "DRAFT", "DRAMA", "DREAM", "DRESS",
+            "DRINK", "ENEMY", "ENTRY", "FAITH", "FAULT", "FIELD", "FIGHT", "FINAL",
+            "FLOOR", "FOCUS", "FORCE", "FRAME", "FRONT", "FRUIT", "GLASS", "GLOVE",
+            "SMILE", "SMOKE", "SOUND", "SPACE", "SPEED", "SPEND", "SPOON", "STAGE",
+            "STAND", "START", "STATE", "STEAM", "STEEL", "STICK", "STILL", "STONE"
+        ];
+
         const grid = document.getElementById("grid");
         const keyboard = document.getElementById("keyboard");
         const messageEl = document.getElementById("message");
@@ -150,7 +167,7 @@
                 resetGame();
             } catch (error) {
                 showMessage("Failed to load word list.");
-                dictionary = ["APPLE", "CRANE", "STORM", "PLANT", "TIGER", "HOUSE"];
+                dictionary = [...commonAnswers]; // Fallback if internet is down
                 resetGame();
             }
         }
@@ -200,7 +217,7 @@
         });
 
         function handleInput(key) {
-            if (gameOver || dictionary.length === 0 || attempts >= maxAttempts) return;
+            if (gameOver || isRevealing || dictionary.length === 0 || attempts >= maxAttempts) return;
             let currentRow = grid.children[attempts];
 
             if (key === "Del") {
@@ -229,18 +246,23 @@
             }
 
             attempts++;
+            isRevealing = true; // Lock inputs during animation
             let currentRow = grid.children[attempts - 1];
             
+            // Check early loss condition
             if (currentGuess === targetWord && attempts < maxAttempts) {
                 for (let i = 0; i < 5; i++) {
                     currentRow.children[i].classList.add("early-lose");
                 }
                 messageEl.style.color = "#ba3c3c";
                 showMessage(`Instant Loss! You found it too early. The word was ${targetWord}`);
-                endGame();
+                gameOver = true;
+                isRevealing = false;
+                restartBtn.style.display = "block";
                 return;
             }
 
+            // Wordle double letter scoring setup
             let rowStatuses = Array(5).fill("absent"); 
             let targetLetterCounts = {};
 
@@ -265,15 +287,26 @@
                 }
             }
 
+            // Staggered Tile Reveal Loop (Reveals colors one by one)
             for (let i = 0; i < 5; i++) {
-                let letter = currentGuess[i];
-                let tile = currentRow.children[i];
-                let status = rowStatuses[i];
-                
-                tile.classList.add(status);
-                updateKeyboardKey(letter, status);
-            }
+                setTimeout(() => {
+                    let letter = currentGuess[i];
+                    let tile = currentRow.children[i];
+                    let status = rowStatuses[i];
+                    
+                    tile.classList.add(status);
+                    updateKeyboardKey(letter, status);
 
+                    // Once the final tile finishes animating, check for end game status
+                    if (i === 4) {
+                        isRevealing = false; // Unlock keyboard inputs
+                        checkGameEnd();
+                    }
+                }, i * 300); // 300ms delay between each tile reveal
+            }
+        }
+
+        function checkGameEnd() {
             if (currentGuess === targetWord && attempts === maxAttempts) {
                 messageEl.style.color = "#538d4e";
                 showMessage("Incredible Clutch Victory! 🎉");
@@ -315,7 +348,11 @@
             attempts = 0;
             currentGuess = "";
             gameOver = false;
-            targetWord = dictionary[Math.floor(Math.random() * dictionary.length)];
+            isRevealing = false;
+            
+            // Pick the answer exclusively from the common list
+            targetWord = commonAnswers[Math.floor(Math.random() * commonAnswers.length)];
+            
             messageEl.textContent = "";
             restartBtn.style.display = "none";
             buildGrid();
