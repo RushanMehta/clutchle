@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clutchle - The Ultimate Win</title>
+    <title>Clutchle - Dynamic Rigged Edition</title>
     <style>
         body {
             background-color: #121213;
@@ -100,8 +100,17 @@
     <div id="keyboard"></div>
 
     <script>
-        let targetWord = "APPLE";
-        const backupWord = "BERRY";
+        // A pool of random 5-letter words
+        const wordPool = [
+            "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
+            "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
+            "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
+            "BLAST", "CRANE", "FROST", "GHOST", "PIVOT", "SHARK", "STORM", "TIGER"
+        ];
+
+        // Pick a random starting word from the pool
+        let targetWord = wordPool[Math.floor(Math.random() * wordPool.length)];
+        
         const maxAttempts = 6;
         let attempts = 0;
         let currentGuess = "";
@@ -140,7 +149,6 @@
             keyboard.appendChild(row);
         });
 
-        // Listen for physical keyboard typing
         window.addEventListener("keydown", (e) => {
             if (e.key === "Enter") handleInput("Enter");
             else if (e.key === "Backspace") handleInput("Del");
@@ -174,21 +182,22 @@
         function submitGuess() {
             attempts++;
             
-            // --- THE RIGGED GAME LOGIC ---
+            // --- THE RANDOMIZED RIGGED LOGIC ---
             if (attempts < maxAttempts) {
-                // If they accidentally guess the target word too early, swap it out
+                // If they accidentally guess the secret word early, swap it out for a different random one
                 if (currentGuess === targetWord) {
-                    targetWord = backupWord;
+                    let availableWords = wordPool.filter(w => w !== currentGuess);
+                    targetWord = availableWords[Math.floor(Math.random() * availableWords.length)];
                 }
             } else {
-                // On the 6th try, whatever they typed automatically becomes the solution
+                // On the 6th try, force a win
                 targetWord = currentGuess;
             }
-            // -----------------------------
+            // -----------------------------------
 
             let currentRow = grid.children[attempts - 1];
             
-            // Color code the tiles
+            // Color code the tiles based on the dynamic target word
             for (let i = 0; i < 5; i++) {
                 let letter = currentGuess[i];
                 let tile = currentRow.children[i];
@@ -204,7 +213,7 @@
 
             if (currentGuess === targetWord) {
                 document.getElementById("message").textContent = `Clutch! You won on attempt ${attempts}!`;
-                attempts = maxAttempts; // End game
+                attempts = maxAttempts; 
             } else {
                 currentGuess = "";
             }
