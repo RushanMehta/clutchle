@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clutchle - The Ultimate Win</title>
+    <style>
+        body {
+            background-color: #121213;
+            color: white;
+            font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 10px;
+        }
+        header {
+            border-bottom: 1px solid #3a3a3c;
+            width: 100%;
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 { margin: 10px 0; font-size: 2.5rem; letter-spacing: 2px; }
+        #grid {
+            display: grid;
+            grid-template-rows: repeat(6, 1fr);
+            grid-gap: 5px;
+            padding: 10px;
+            width: 350px;
+            height: 420px;
+            max-width: 100%;
+        }
+        .row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-gap: 5px;
+        }
+        .tile {
+            border: 2px solid #3a3a3c;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            user-select: none;
+        }
+        .tile.filled { border-color: #565758; }
+        .correct { background-color: #538d4e; border-color: #538d4e; }
+        .present { background-color: #b59f3b; border-color: #b59f3b; }
+        .absent { background-color: #3a3a3c; border-color: #3a3a3c; }
+        #keyboard {
+            margin: 20px 0 0 0;
+            width: 100%;
+            max-width: 500px;
+        }
+        .keyboard-row {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 8px;
+            touch-action: manipulation;
+        }
+        .key {
+            background-color: #818384;
+            color: white;
+            border: 0;
+            padding: 0;
+            margin: 0 3px;
+            height: 58px;
+            grid-column: span 2;
+            border-radius: 4px;
+            cursor: pointer;
+            user-select: none;
+            font-weight: bold;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+        }
+        .key.wide { flex: 1.5; }
+        #message {
+            height: 30px;
+            color: #538d4e;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>CLUTCHLE</h1>
+    </header>
+
+    <div id="grid"></div>
+    <div id="message"></div>
+    <div id="keyboard"></div>
+
+    <script>
+        let targetWord = "APPLE";
+        const backupWord = "BERRY";
+        const maxAttempts = 6;
+        let attempts = 0;
+        let currentGuess = "";
+        
+        // Setup Grid
+        const grid = document.getElementById("grid");
+        for (let i = 0; i < maxAttempts; i++) {
+            let row = document.createElement("div");
+            row.className = "row";
+            for (let j = 0; j < 5; j++) {
+                let tile = document.createElement("div");
+                tile.className = "tile";
+                row.appendChild(tile);
+            }
+            grid.appendChild(row);
+        }
+
+        // Setup Keyboard Layout
+        const keyboardLayout = [
+            ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
+            ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
+            ["Enter", "z", "x", "c", "v", "b", "n", "m", "Del"]
+        ];
+        const keyboard = document.getElementById("keyboard");
+        keyboardLayout.forEach(rowArr => {
+            let row = document.createElement("div");
+            row.className = "keyboard-row";
+            rowArr.forEach(key => {
+                let btn = document.createElement("button");
+                btn.textContent = key;
+                btn.className = "key";
+                if (key === "Enter" || key === "Del") btn.classList.add("wide");
+                btn.addEventListener("click", () => handleInput(key));
+                row.appendChild(btn);
+            });
+            keyboard.appendChild(row);
+        });
+
+        // Listen for physical keyboard typing
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") handleInput("Enter");
+            else if (e.key === "Backspace") handleInput("Del");
+            else if (/^[a-zA-Z]$/.test(e.key)) handleInput(e.key.toLowerCase());
+        });
+
+        function handleInput(key) {
+            if (attempts >= maxAttempts) return;
+            let currentRow = grid.children[attempts];
+
+            if (key === "Del") {
+                if (currentGuess.length > 0) {
+                    currentGuess = currentGuess.slice(0, -1);
+                    currentRow.children[currentGuess.length].textContent = "";
+                    currentRow.children[currentGuess.length].classList.remove("filled");
+                }
+            } else if (key === "Enter") {
+                if (currentGuess.length === 5) {
+                    submitGuess();
+                } else {
+                    document.getElementById("message").textContent = "Not enough letters!";
+                    setTimeout(() => document.getElementById("message").textContent = "", 2000);
+                }
+            } else if (currentGuess.length < 5 && key !== "Enter" && key !== "Del") {
+                currentGuess += key.toUpperCase();
+                currentRow.children[currentGuess.length - 1].textContent = key;
+                currentRow.children[currentGuess.length - 1].classList.add("filled");
+            }
+        }
+
+        function submitGuess() {
+            attempts++;
+            
+            // --- THE RIGGED GAME LOGIC ---
+            if (attempts < maxAttempts) {
+                // If they accidentally guess the target word too early, swap it out
+                if (currentGuess === targetWord) {
+                    targetWord = backupWord;
+                }
+            } else {
+                // On the 6th try, whatever they typed automatically becomes the solution
+                targetWord = currentGuess;
+            }
+            // -----------------------------
+
+            let currentRow = grid.children[attempts - 1];
+            
+            // Color code the tiles
+            for (let i = 0; i < 5; i++) {
+                let letter = currentGuess[i];
+                let tile = currentRow.children[i];
+                
+                if (letter === targetWord[i]) {
+                    tile.classList.add("correct");
+                } else if (targetWord.includes(letter)) {
+                    tile.classList.add("present");
+                } else {
+                    tile.classList.add("absent");
+                }
+            }
+
+            if (currentGuess === targetWord) {
+                document.getElementById("message").textContent = `Clutch! You won on attempt ${attempts}!`;
+                attempts = maxAttempts; // End game
+            } else {
+                currentGuess = "";
+            }
+        }
+    </script>
+</body>
+</html>
