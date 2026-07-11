@@ -48,7 +48,7 @@
         }
         .tile.filled { border-color: #565758; }
         
-        /* State Colors for Tiles & Keys */
+        /* State Colors */
         .correct { background-color: #538d4e !important; border-color: #538d4e !important; }
         .present { background-color: #b59f3b !important; border-color: #b59f3b !important; }
         .absent { background-color: #3a3a3c !important; border-color: #3a3a3c !important; }
@@ -180,7 +180,6 @@
                     btn.addEventListener("click", () => handleInput(key));
                     row.appendChild(btn);
                 });
-                keyboard.appendChild(btn); // Fix: Append row to keyboard
                 keyboard.appendChild(row);
             });
         }
@@ -233,16 +232,13 @@
                 return;
             }
 
-            // --- ACCURATE WORDLE DOUBLE LETTER SCORING LOGIC ---
             let rowStatuses = Array(5).fill("absent"); 
             let targetLetterCounts = {};
 
-            // Step 1: Count letter frequencies in the solution word
             for (let letter of targetWord) {
                 targetLetterCounts[letter] = (targetLetterCounts[letter] || 0) + 1;
             }
 
-            // Step 2: First pass - find all perfect matches (Green)
             for (let i = 0; i < 5; i++) {
                 if (currentGuess[i] === targetWord[i]) {
                     rowStatuses[i] = "correct";
@@ -250,7 +246,6 @@
                 }
             }
 
-            // Step 3: Second pass - identify valid misplaced letters (Yellow)
             for (let i = 0; i < 5; i++) {
                 if (rowStatuses[i] !== "correct") {
                     let letter = currentGuess[i];
@@ -261,7 +256,6 @@
                 }
             }
 
-            // Step 4: Apply styles to grid tiles and update on-screen keyboard colors
             for (let i = 0; i < 5; i++) {
                 let letter = currentGuess[i];
                 let tile = currentRow.children[i];
@@ -271,7 +265,6 @@
                 updateKeyboardKey(letter, status);
             }
 
-            // Check End Conditions
             if (currentGuess === targetWord && attempts === maxAttempts) {
                 messageEl.style.color = "#538d4e";
                 showMessage("Incredible Clutch Victory! 🎉");
@@ -289,11 +282,9 @@
             let keyBtn = document.getElementById("key-" + letter);
             if (!keyBtn) return;
 
-            // Green overrides everything, Yellow overrides Gray/None, Gray only overrides None
             if (keyBtn.classList.contains("correct")) return;
             if (keyBtn.classList.contains("present") && status === "absent") return;
 
-            // Clear previous class states to avoid color mixing bugs
             keyBtn.classList.remove("correct", "present", "absent");
             keyBtn.classList.add(status);
         }
