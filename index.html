@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clutchle - The Ultimate Win</title>
-    <meta name="description" content="Clutchle - The ultimate 6th-try Wordle challenge game.">
-<meta name="keywords" content="Clutchle, Wordle, Game, Clutch, 5-letter word game">
-    <meta name="google-site-verification"
-        content="4dzfXtEbuE8LM-eWO7rWFuQS-IEQIrHCcvFHCnmmBCo"/>
+    <title>Clutchle - The Daily Challenge</title>
     <style>
         body {
             background-color: #121213;
@@ -34,6 +30,20 @@
             line-height: 1.4;
             font-weight: normal;
         }
+        #stats-container {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+            background: #252526;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .stat-box { text-align: center; }
+        .stat-val { font-size: 1.5rem; font-weight: bold; color: #538d4e; }
+        .stat-lbl { font-size: 0.8rem; color: #818384; }
+        
         #grid {
             display: grid;
             grid-template-rows: repeat(6, 1fr);
@@ -61,7 +71,6 @@
         }
         .tile.filled { border-color: #565758; }
         
-        /* State Colors */
         .correct { background-color: #538d4e !important; border-color: #538d4e !important; }
         .present { background-color: #b59f3b !important; border-color: #b59f3b !important; }
         .absent { background-color: #3a3a3c !important; border-color: #3a3a3c !important; }
@@ -104,20 +113,14 @@
             margin-top: 10px;
             text-align: center;
         }
-        #restart-btn {
+        #timer-container {
             display: none;
             margin-top: 15px;
-            padding: 12px 24px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            background-color: #538d4e;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-transform: uppercase;
+            color: #818384;
         }
-        #restart-btn:hover { background-color: #43733f; }
+        #countdown { color: #538d4e; }
     </style>
 </head>
 <body>
@@ -127,39 +130,44 @@
         <p class="subtitle">Find clues for 5 rounds. Guess the secret word on the 6th try to win. Get it early or fail the final round, and you lose.</p>
     </header>
 
+    <div id="stats-container">
+        <div class="stat-box"><div class="stat-val" id="stat-played">0</div><div class="stat-lbl">Played</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-wins">0</div><div class="stat-lbl">Wins</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-losses">0</div><div class="stat-lbl">Losses</div></div>
+    </div>
+
     <div id="grid"></div>
     <div id="message"></div>
-    <button id="restart-btn" onclick="resetGame()">Play Again</button>
+    
+    <div id="timer-container">
+        NEXT CLUTCHLE IN: <span id="countdown">00:00:00</span>
+    </div>
+
     <div id="keyboard"></div>
 
     <script>
-        let dictionary = []; // Massive verification list loaded from the internet
+        let dictionary = []; 
         let targetWord = "";
         const maxAttempts = 6;
         let attempts = 0;
         let currentGuess = "";
         let gameOver = false;
-        let isRevealing = false; // Prevents typing while tiles are animating
+        let isRevealing = false;
         
-        // A curated list of common, recognizable 5-letter answer words
         const commonAnswers = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
             "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
-            "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
-            "BLAST", "CRANE", "FROST", "GHOST", "PIVOT", "SHARK", "STORM", "TIGER",
-            "ABOVE", "ADULT", "AGENT", "ANGER", "AWARD", "BRICK", "CHAIR", "CLAIM",
-            "CLOCK", "CLOTH", "COACH", "COAST", "COUNT", "COURT", "COVER", "CREAM",
-            "CROWD", "CROWN", "DANCE", "DEPTH", "DRAFT", "DRAMA", "DREAM", "DRESS",
-            "DRINK", "ENEMY", "ENTRY", "FAITH", "FAULT", "FIELD", "FIGHT", "FINAL",
-            "FLOOR", "FOCUS", "FORCE", "FRAME", "FRONT", "FRUIT", "GLASS", "GLOVE",
-            "SMILE", "SMOKE", "SOUND", "SPACE", "SPEED", "SPEND", "SPOON", "STAGE",
-            "STAND", "START", "STATE", "STEAM", "STEEL", "STICK", "STILL", "STONE"
+            "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH"
         ];
 
         const grid = document.getElementById("grid");
         const keyboard = document.getElementById("keyboard");
         const messageEl = document.getElementById("message");
-        const restartBtn = document.getElementById("restart-btn");
+        const timerContainer = document.getElementById("timer-container");
+        const countdownEl = document.getElementById("countdown");
+
+        // Load local persistent stats
+        let stats = JSON.parse(localStorage.getItem("clutchle_stats")) || { played: 0, wins: 0, losses: 0, lastPlayedDate: "" };
 
         async function loadDictionary() {
             showMessage("Loading dictionary...");
@@ -168,11 +176,41 @@
                 const text = await response.text();
                 dictionary = text.toUpperCase().split('\n').map(word => word.trim()).filter(word => word.length === 5);
                 messageEl.textContent = "";
-                resetGame();
+                initGame();
             } catch (error) {
-                showMessage("Failed to load word list.");
-                dictionary = [...commonAnswers]; // Fallback if internet is down
-                resetGame();
+                dictionary = [...commonAnswers];
+                initGame();
+            }
+        }
+
+        function updateStatsUI() {
+            document.getElementById("stat-played").textContent = stats.played;
+            document.getElementById("stat-wins").textContent = stats.wins;
+            document.getElementById("stat-losses").textContent = stats.losses;
+        }
+
+        function getTodayString() {
+            const d = new Date();
+            return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+        }
+
+        function initGame() {
+            updateStatsUI();
+            buildGrid();
+            buildKeyboard();
+
+            // Pseudo-random word unique to each calendar date
+            const todayStr = getTodayString();
+            let seed = 0;
+            for (let i = 0; i < todayStr.length; i++) seed += todayStr.charCodeAt(i);
+            const wordIndex = seed % commonAnswers.length;
+            targetWord = commonAnswers[wordIndex];
+
+            // Check if player already completed today's game
+            if (stats.lastPlayedDate === todayStr) {
+                gameOver = true;
+                showMessage("You have completed today's challenge!");
+                startCountdown();
             }
         }
 
@@ -250,37 +288,29 @@
             }
 
             attempts++;
-            isRevealing = true; // Lock inputs during animation
+            isRevealing = true; 
             let currentRow = grid.children[attempts - 1];
             
-            // Check early loss condition
             if (currentGuess === targetWord && attempts < maxAttempts) {
-                for (let i = 0; i < 5; i++) {
-                    currentRow.children[i].classList.add("early-lose");
-                }
+                for (let i = 0; i < 5; i++) currentRow.children[i].classList.add("early-lose");
                 messageEl.style.color = "#ba3c3c";
                 showMessage(`Instant Loss! You found it too early. The word was ${targetWord}`);
-                gameOver = true;
-                isRevealing = false;
-                restartBtn.style.display = "block";
+                recordResult(false);
                 return;
             }
 
-            // Wordle double letter scoring setup
             let rowStatuses = Array(5).fill("absent"); 
             let targetLetterCounts = {};
 
             for (let letter of targetWord) {
                 targetLetterCounts[letter] = (targetLetterCounts[letter] || 0) + 1;
             }
-
             for (let i = 0; i < 5; i++) {
                 if (currentGuess[i] === targetWord[i]) {
                     rowStatuses[i] = "correct";
                     targetLetterCounts[currentGuess[i]]--;
                 }
             }
-
             for (let i = 0; i < 5; i++) {
                 if (rowStatuses[i] !== "correct") {
                     let letter = currentGuess[i];
@@ -291,7 +321,6 @@
                 }
             }
 
-            // Staggered Tile Reveal Loop (Reveals colors one by one)
             for (let i = 0; i < 5; i++) {
                 setTimeout(() => {
                     let letter = currentGuess[i];
@@ -301,12 +330,11 @@
                     tile.classList.add(status);
                     updateKeyboardKey(letter, status);
 
-                    // Once the final tile finishes animating, check for end game status
                     if (i === 4) {
-                        isRevealing = false; // Unlock keyboard inputs
+                        isRevealing = false; 
                         checkGameEnd();
                     }
-                }, i * 300); // 300ms delay between each tile reveal
+                }, i * 300);
             }
         }
 
@@ -314,23 +342,33 @@
             if (currentGuess === targetWord && attempts === maxAttempts) {
                 messageEl.style.color = "#538d4e";
                 showMessage("Incredible Clutch Victory! 🎉");
-                endGame();
+                recordResult(true);
             } else if (attempts === maxAttempts) {
                 messageEl.style.color = "#ba3c3c";
                 showMessage(`Game Over! The word was ${targetWord}`);
-                endGame();
+                recordResult(false);
             } else {
                 currentGuess = "";
             }
         }
 
+        function recordResult(isWin) {
+            stats.played++;
+            if (isWin) stats.wins++;
+            else stats.losses++;
+            stats.lastPlayedDate = getTodayString();
+            
+            localStorage.setItem("clutchle_stats", JSON.stringify(stats));
+            updateStatsUI();
+            gameOver = true;
+            startCountdown();
+        }
+
         function updateKeyboardKey(letter, status) {
             let keyBtn = document.getElementById("key-" + letter);
             if (!keyBtn) return;
-
             if (keyBtn.classList.contains("correct")) return;
             if (keyBtn.classList.contains("present") && status === "absent") return;
-
             keyBtn.classList.remove("correct", "present", "absent");
             keyBtn.classList.add(status);
         }
@@ -342,25 +380,21 @@
             }
         }
 
-        function endGame() {
-            gameOver = true;
-            restartBtn.style.display = "block";
-        }
+        function startCountdown() {
+            timerContainer.style.display = "block";
+            function updateTimer() {
+                const now = new Date();
+                const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                const diff = tomorrow - now;
 
-        function resetGame() {
-            if (dictionary.length === 0) return;
-            attempts = 0;
-            currentGuess = "";
-            gameOver = false;
-            isRevealing = false;
-            
-            // Pick the answer exclusively from the common list
-            targetWord = commonAnswers[Math.floor(Math.random() * commonAnswers.length)];
-            
-            messageEl.textContent = "";
-            restartBtn.style.display = "none";
-            buildGrid();
-            buildKeyboard();
+                const hours = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+                countdownEl.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+            updateTimer();
+            setInterval(updateTimer, 1000);
         }
 
         loadDictionary();
