@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clutchle - The Daily Challenge</title>
+    <meta name="description" content="Play Clutchle, the ultimate daily 5-letter word game. Find clues for 5 rounds and clutch the win on the 6th try.">
     <style>
         body {
             background-color: #121213;
@@ -154,10 +155,76 @@
         let gameOver = false;
         let isRevealing = false;
         
+        // Massive Curated Answer Pool (520 Common Words)
         const commonAnswers = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
             "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
-            "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH"
+            "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
+            "ABOUT", "ADMIT", "ADULT", "AFTER", "AGREE", "ALIVE", "ALONE", "ALONG",
+            "ALTER", "AMONG", "ANGER", "ANGLE", "ANGRY", "APART", "ARGUE", "ARRAY",
+            "ARROW", "ASSET", "AUDIO", "AWAKE", "AWARD", "BASIC", "BEGIN", "BLACK",
+            "BLIND", "BLOCK", "BLOOD", "BOARD", "BOOST", "BRAIN", "BRAVE", "BREAD",
+            "BREAK", "BRICK", "BRING", "BROKE", "BROWN", "BRUSH", "BUILD", "BUILT",
+            "BUNCH", "BUYER", "CABLE", "CALM", "CANDY", "CARRY", "CARVE", "CATCH",
+            "CAUSE", "CHAIN", "CHAIR", "CHAMP", "CHART", "CHASE", "CHEAP", "CHECK",
+            "CHEST", "CHILD", "CHIPS", "CHOIR", "CHOSE", "CLAIM", "CLASS", "CLEAN",
+            "CLEAR", "CLIMB", "CLOCK", "CLOSE", "CLOTH", "CLOUD", "COACH", "COAST",
+            "COUNT", "COURT", "COVER", "CREAM", "CROWD", "CROWN", "DANCE", "DEPTH", 
+            "DRAFT", "DRAMA", "DREAM", "DRESS", "DRINK", "ENEMY", "ENTRY", "FAITH", 
+            "FAULT", "FIELD", "FIGHT", "FINAL", "FLOOR", "FOCUS", "FORCE", "FRAME", 
+            "FRONT", "FRUIT", "GLASS", "GLOVE", "SMILE", "SMOKE", "SOUND", "SPACE", 
+            "SPEED", "SPEND", "SPOON", "STAGE", "STAND", "START", "STATE", "STEAM", 
+            "STEEL", "STICK", "STILL", "STONE", "DAILY", "DELAY", "DEVIL", "DIRTY", 
+            "DONKEY", "DOUBT", "DOZEN", "EAGLE", "EARLY", "EMPTY", "ENJOY", "EQUAL", 
+            "ERROR", "EVENT", "EVERY", "EXTRA", "FAINT", "FALSE", "FANCY", "FATAL", 
+            "FEVER", "FIFTH", "FIRST", "FIXED", "FLAME", "FLASH", "FLESH", "FLOAT", 
+            "FLOOD", "FLUID", "FLYER", "FOCUS", "FORCE", "FORTH", "FORTY", "FORUM", 
+            "FOUND", "FRAME", "FRESH", "FRONT", "FRUIT", "FUNNY", "GIANT", "GIVEN", 
+            "GLASS", "GLOBE", "GLORY", "GLOVE", "GRACE", "GRADE", "GRAND", "GRANT", 
+            "GRASS", "GRAVE", "GREAT", "GREEN", "GREET", "GRIEF", "GROSS", "GROUP", 
+            "GROWN", "GUARD", "GUESS", "GUEST", "GUIDE", "HABIT", "HAPPY", "HARSH", 
+            "HEART", "HEAVY", "HELLO", "HONEY", "HONOR", "HORSE", "HOTEL", "HUMAN", 
+            "HUMOR", "IDEAL", "IMAGE", "IMPLY", "INNER", "INPUT", "IRONY", "ISSUE", 
+            "ITEMS", "IVORY", "JACKET", "JOINT", "JUDGE", "JUICY", "LEMON", "LEVEL", 
+            "LEVER", "LIGHT", "LIMIT", "LINER", "LOGIC", "LOOSE", "LOVER", "LOWER", 
+            "LUCKY", "LUNCH", "LYRIC", "MAGIC", "MAJOR", "MAKER", "MARCH", "MATCH", 
+            "MAYOR", "MEANSM", "MEDAL", "MEDIA", "MERCY", "MERIT", "METAL", "MICRO", 
+            "MIDST", "MIGHT", "MINOR", "MINUS", "MIXED", "MODEL", "MODEM", "MOIST", 
+            "MONEY", "MONTH", "MORAL", "MOTOR", "MOUNT", "MOUSE", "MOUTH", "MOVIE", 
+            "MUSIC", "MYTHS", "NAKED", "NASTY", "NAVAL", "NEEDS", "NEVER", "NEWER", 
+            "NIGHT", "NINTH", "NOBLE", "NOISE", "NORTH", "NOTED", "NOVEL", "NURSE", 
+            "OCCUR", "OCEAN", "OFFER", "OFTEN", "ORDER", "OTHER", "OUTER", "OWNER", 
+            "PANEL", "PAPER", "PARTY", "PATCH", "PATHS", "PATIO", "PAUSE", "PEACE", 
+            "PEACH", "PEARL", "PEDAL", "PHASE", "PHONE", "PHOTO", "PIANO", "PICKY", 
+            "PILOT", "PITCH", "PIXEL", "PIZZA", "PLACE", "PLAIN", "PLANE", "PLANT", 
+            "PLATE", "PLAYS", "PLAZA", "PLEAD", "PLUCK", "POEMS", "POINT", "POKER", 
+            "POLAR", "POLES", "POLIO", "POLITE", "POLYP", "PONEY", "POOLS", "PORCH", 
+            "PORTS", "POUND", "POWER", "PRESS", "PRICE", "PRIDE", "PRIME", "PRINT", 
+            "PRIOR", "PRIZE", "PROBE", "PROMO", "PROUD", "PROVE", "PROXYS", "PULSE", 
+            "PUNCH", "PUPIL", "PUPPY", "PURELY", "PURSE", "QUEEN", "QUERY", "QUEST", 
+            "QUEUE", "QUICK", "QUIET", "QUILT", "QUITE", "QUOTA", "QUOTE", "RACING", 
+            "RADAR", "RADIO", "RAILS", "RAINY", "RAISE", "RALLY", "RAMCH", "RANGE", 
+            "RAPID", "RATIO", "RAZOR", "REACH", "REACT", "READY", "REALM", "REBEL", 
+            "REFER", "REIGN", "RELAX", "REPLY", "RESET", "RESIN", "RETRO", "RIDER", 
+            "RIDGE", "RIFLE", "RIGHT", "RIGID", "RINGS", "RINSE", "RISKY", "RIVAL", 
+            "RIVER", "ROADS", "ROBOT", "ROCKS", "ROCKY", "ROGUE", "ROLES", "ROMAN", 
+            "ROOF", "ROOMS", "ROOMY", "ROOTS", "ROTOR", "ROUGH", "ROUND", "ROUTE", 
+            "ROWER", "ROYAL", "RUBBER", "RUDE", "RUINS", "RULER", "RURAL", "SABER", 
+            "SACK", "SADLY", "SAFER", "SAFETY", "SAGE", "SAIL", "SALAD", "SALES", 
+            "SALON", "SALSA", "SALTY", "SAME", "SANDY", "SATIN", "SAUCE", "SAUCY", 
+            "SAVED", "SAVIOR", "SAVOR", "SCALE", "SCALP", "SCANT", "SCARE", "SCARF", 
+            "SCARY", "SCENE", "SCENT", "SCOLD", "SCOOP", "SCOPE", "SCORE", "SCORN", 
+            "SCOUT", "SCRAP", "SCREW", "SCRIP", "SCUBA", "SEALS", "SEAM", "SEATS", 
+            "SECTOR", "SEDAN", "SEEDS", "SEEDY", "SEEKER", "SEEMS", "SEGMENT", "SEIZE", 
+            "SELLER", "SENIOR", "SENSE", "SERUM", "SERVE", "SETUP", "SEVEN", "SEVERE", 
+            "SHACK", "SHADE", "SHADO", "SHADY", "SHAFT", "SHAKE", "SHAKY", "SHALE", 
+            "SHALL", "SHAME", "SHANK", "SHAPE", "SHARE", "SHARK", "SHARP", "SHAVE", 
+            "SHAWL", "SHEAR", "SHED", "SHEEP", "SHEER", "SHEET", "SHELF", "SHELL", 
+            "SHIFT", "SHINE", "SHINY", "SHIPS", "SHIRT", "SHOCK", "SHOES", "SHOON", 
+            "SHOOT", "SHOPS", "SHORE", "SHORT", "SHOT", "SHOUT", "SHOVE", "SHOWN", 
+            "SHOWY", "SHRED", "SHREW", "SHRUB", "SHRUG", "SHUN", "SHUT", "SHYLY", 
+            "SICKLY", "SIDE", "SIEGE", "SIGHT", "SIGMA", "SIGN", "SILENT", "SILK", 
+            "SILKY", "SILLY", "SILVER", "SIMPLY", "SINCE", "SINFUL", "SING", "SINGER"
         ];
 
         const grid = document.getElementById("grid");
@@ -166,7 +233,6 @@
         const timerContainer = document.getElementById("timer-container");
         const countdownEl = document.getElementById("countdown");
 
-        // Load local persistent stats
         let stats = JSON.parse(localStorage.getItem("clutchle_stats")) || { played: 0, wins: 0, losses: 0, lastPlayedDate: "" };
 
         async function loadDictionary() {
@@ -199,14 +265,12 @@
             buildGrid();
             buildKeyboard();
 
-            // Pseudo-random word unique to each calendar date
             const todayStr = getTodayString();
             let seed = 0;
             for (let i = 0; i < todayStr.length; i++) seed += todayStr.charCodeAt(i);
             const wordIndex = seed % commonAnswers.length;
             targetWord = commonAnswers[wordIndex];
 
-            // Check if player already completed today's game
             if (stats.lastPlayedDate === todayStr) {
                 gameOver = true;
                 showMessage("You have completed today's challenge!");
