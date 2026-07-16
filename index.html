@@ -1,22 +1,27 @@
 <!DOCTYPE html>
-<html lang="en"> 
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clutchle - The Daily Challenge</title>
-    <meta name="description" content="Play Clutchle, the ultimate daily 5-letter word game. Find clues for 5 rounds and clutch the win on the 6th try.">
+    
+    <title>Clutchle - The Ultimate Daily 5-Letter Word Game</title>
+    <meta name="description" content="Play Clutchle, the free daily 5-letter word puzzle game. Collect clues for 5 rounds and clutch the win on the 6th try. Avoid winning early or failing!">
+    <meta name="keywords" content="Clutchle, word game, daily word challenge, free online puzzle, wordle spinoff, brain game, clutch win">
+    
     <meta property="og:site_name" content="Clutchle">
-<meta property="og:title" content="Clutchle - The Daily Challenge">
+    <meta property="og:title" content="Clutchle - The Daily Challenge">
+    <meta property="og:description" content="Can you clutch the win on the final try? Play Clutchle, the daily 5-letter word game.">
     <link rel="icon" type="image/png" href="favicon.png">
 
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Clutchle",
-  "url": "https://rushanmehta.github.io/clutchle/"
-}
-</script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Clutchle",
+      "url": "https://rushanmehta.github.io/clutchle/"
+    }
+    </script>
+
     <style>
         body {
             background-color: #121213;
@@ -126,9 +131,31 @@
             margin-top: 10px;
             text-align: center;
         }
-        #timer-container {
+        
+        /* Share & Timer Container */
+        #end-game-controls {
             display: none;
+            flex-direction: column;
+            align-items: center;
             margin-top: 15px;
+        }
+        #share-btn {
+            background-color: #538d4e;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transition: background-color 0.2s, transform 0.1s;
+            margin-bottom: 10px;
+        }
+        #share-btn:hover { background-color: #43733f; }
+        #share-btn:active { transform: scale(0.98); }
+        
+        #timer-container {
             font-size: 1.1rem;
             font-weight: bold;
             color: #818384;
@@ -152,8 +179,11 @@
     <div id="grid"></div>
     <div id="message"></div>
     
-    <div id="timer-container">
-        NEXT CLUTCHLE IN: <span id="countdown">00:00:00</span>
+    <div id="end-game-controls">
+        <button id="share-btn" onclick="shareScore()">SHARE SCORE 📋</button>
+        <div id="timer-container">
+            NEXT CLUTCHLE IN: <span id="countdown">00:00:00</span>
+        </div>
     </div>
 
     <div id="keyboard"></div>
@@ -167,6 +197,9 @@
         let gameOver = false;
         let isRevealing = false;
         
+        // Track the grid grid matrix states for share formatting
+        let guessGridStates = [];
+
         // Massive Curated Answer Pool (520 Common Words)
         const commonAnswers = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
@@ -242,7 +275,7 @@
         const grid = document.getElementById("grid");
         const keyboard = document.getElementById("keyboard");
         const messageEl = document.getElementById("message");
-        const timerContainer = document.getElementById("timer-container");
+        const endGameControls = document.getElementById("end-game-controls");
         const countdownEl = document.getElementById("countdown");
 
         let stats = JSON.parse(localStorage.getItem("clutchle_stats")) || { played: 0, wins: 0, losses: 0, lastPlayedDate: "" };
@@ -286,7 +319,7 @@
             if (stats.lastPlayedDate === todayStr) {
                 gameOver = true;
                 showMessage("You have completed today's challenge!");
-                startCountdown();
+                revealControls();
             }
         }
 
@@ -368,6 +401,8 @@
             let currentRow = grid.children[attempts - 1];
             
             if (currentGuess === targetWord && attempts < maxAttempts) {
+                // Record instant early-loss row pattern
+                guessGridStates.push(Array(5).fill("early-lose"));
                 for (let i = 0; i < 5; i++) currentRow.children[i].classList.add("early-lose");
                 messageEl.style.color = "#ba3c3c";
                 showMessage(`Instant Loss! You found it too early. The word was ${targetWord}`);
@@ -396,6 +431,8 @@
                     }
                 }
             }
+
+            guessGridStates.push([...rowStatuses]);
 
             for (let i = 0; i < 5; i++) {
                 setTimeout(() => {
@@ -437,7 +474,7 @@
             localStorage.setItem("clutchle_stats", JSON.stringify(stats));
             updateStatsUI();
             gameOver = true;
-            startCountdown();
+            revealControls();
         }
 
         function updateKeyboardKey(letter, status) {
@@ -456,8 +493,12 @@
             }
         }
 
+        function revealControls() {
+            endGameControls.style.display = "flex";
+            startCountdown();
+        }
+
         function startCountdown() {
-            timerContainer.style.display = "block";
             function updateTimer() {
                 const now = new Date();
                 const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
@@ -471,6 +512,45 @@
             }
             updateTimer();
             setInterval(updateTimer, 1000);
+        }
+
+        // --- Custom Score Share Logic ---
+        function shareScore() {
+            const today = new Date();
+            const dateFormatted = `${today.getMonth() + 1}/${today.getDate()}`;
+            
+            // Build the grid share string using classic emojis
+            let emojiGrid = "";
+            guessGridStates.forEach(row => {
+                let emojiRow = "";
+                row.forEach(status => {
+                    if (status === "correct") emojiRow += "🟩";
+                    else if (status === "present") emojiRow += "🟨";
+                    else if (status === "absent") emojiRow += "⬛";
+                    else if (status === "early-lose") emojiRow += "🟥";
+                });
+                emojiGrid += emojiRow + "\n";
+            });
+
+            // Decide result text
+            const finalRow = guessGridStates[guessGridStates.length - 1];
+            const hasWon = finalRow && finalRow.every(status => status === "correct") && guessGridStates.length === 6;
+            const scoreLabel = hasWon ? "6/6 (CLUTCHED!)" : "X/6";
+
+            const shareText = `Clutchle ${dateFormatted} - ${scoreLabel}\n\n${emojiGrid}\nPlay here: https://rushanmehta.github.io/clutchle/`;
+
+            // Write straight to clipboard
+            navigator.clipboard.writeText(shareText)
+                .then(() => {
+                    const originalText = document.getElementById("share-btn").innerHTML;
+                    document.getElementById("share-btn").innerHTML = "COPIED TO CLIPBOARD! ✔️";
+                    setTimeout(() => {
+                        document.getElementById("share-btn").innerHTML = originalText;
+                    }, 2500);
+                })
+                .catch(err => {
+                    alert("Unable to copy automatically. Copy this layout: \n\n" + shareText);
+                });
         }
 
         loadDictionary();
