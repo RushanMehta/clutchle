@@ -383,6 +383,7 @@
         let gameOver = false;
         let isRevealing = false;
         
+        let guesses = [];
         let guessGridStates = [];
 
         // Massive Curated Answer Pool
@@ -528,11 +529,63 @@
             const wordIndex = seed % commonAnswers.length;
             targetWord = commonAnswers[wordIndex];
 
-            if (stats.lastPlayedDate === todayStr) {
-                gameOver = true;
-                showMessage("You have completed today's challenge!");
-                revealControls();
+            // --- Load Saved Game State ---
+            const savedState = JSON.parse(localStorage.getItem("clutchle_game_state"));
+            if (savedState && savedState.date === todayStr) {
+                guesses = savedState.guesses;
+                guessGridStates = savedState.statuses;
+                attempts = savedState.attempts;
+                gameOver = savedState.gameOver;
+                
+                // Repopulate active board from storage
+                for (let r = 0; r < guesses.length; r++) {
+                    let word = guesses[r];
+                    let statuses = guessGridStates[r];
+                    let row = grid.children[r];
+                    for (let c = 0; c < 5; c++) {
+                        let tile = row.children[c];
+                        tile.textContent = word[c];
+                        tile.classList.add("filled", statuses[c]);
+                        updateKeyboardKey(word[c], statuses[c]);
+                    }
+                }
+                
+                // If game was completed today, show state and buttons immediately
+                if (gameOver) {
+                    const finalRow = guessGridStates[guessGridStates.length - 1];
+                    const hasWon = finalRow && finalRow.every(status => status === "correct") && guessGridStates.length === 6;
+                    if (hasWon) {
+                        messageEl.style.color = "#538d4e";
+                        showMessage("Incredible Clutch Victory! 🎉");
+                    } else {
+                        messageEl.style.color = "#ba3c3c";
+                        if (guesses.includes(targetWord) && guesses.indexOf(targetWord) < 5) {
+                            showMessage(`Instant Loss! You found it too early. The word was ${targetWord}`);
+                        } else {
+                            showMessage(`Game Over! The word was ${targetWord}`);
+                        }
+                    }
+                    revealControls();
+                }
+            } else {
+                // If a new day occurs, clear out obsolete game board progress
+                localStorage.removeItem("clutchle_game_state");
+                guesses = [];
+                guessGridStates = [];
+                attempts = 0;
+                gameOver = false;
             }
+        }
+
+        function saveGameState() {
+            const state = {
+                date: getTodayString(),
+                guesses: guesses,
+                statuses: guessGridStates,
+                gameOver: gameOver,
+                attempts: attempts
+            };
+            localStorage.setItem("clutchle_game_state", JSON.stringify(state));
         }
 
         function buildGrid() {
@@ -609,6 +662,7 @@
                 return;
             }
 
+            guesses.push(currentGuess);
             attempts++;
             isRevealing = true; 
             let currentRow = grid.children[attempts - 1];
@@ -619,6 +673,7 @@
                 messageEl.style.color = "#ba3c3c";
                 showMessage(`Instant Loss! You found it too early. The word was ${targetWord}`);
                 recordResult(false);
+                saveGameState();
                 return;
             }
 
@@ -658,6 +713,7 @@
                     if (i === 4) {
                         isRevealing = false; 
                         checkGameEnd();
+                        saveGameState();
                     }
                 }, i * 300);
             }
@@ -674,6 +730,7 @@
                 recordResult(false);
             } else {
                 currentGuess = "";
+                saveGameState(); // Save incomplete board progress
             }
         }
 
