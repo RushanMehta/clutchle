@@ -39,6 +39,7 @@
             text-align: center;
             max-width: 500px;
             padding-bottom: 10px;
+            position: relative;
         }
         h1 { margin: 10px 0 5px 0; font-size: 2.5rem; letter-spacing: 2px; }
         .subtitle {
@@ -48,6 +49,22 @@
             line-height: 1.4;
             font-weight: normal;
         }
+        
+        /* Help Button in Header */
+        #help-btn {
+            position: absolute;
+            right: 10px;
+            top: 15px;
+            background: none;
+            border: none;
+            color: #818384;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+        #help-btn:hover { color: white; }
+
         #stats-container {
             display: flex;
             justify-content: space-around;
@@ -161,13 +178,92 @@
             color: #818384;
         }
         #countdown { color: #538d4e; }
+
+        /* --- Modal (How to Play) Styles --- */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .modal-content {
+            background-color: #1a1a1b;
+            border: 1px solid #3a3a3c;
+            border-radius: 12px;
+            max-width: 450px;
+            width: 100%;
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+        .close-modal {
+            position: absolute;
+            right: 18px;
+            top: 15px;
+            color: #818384;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-modal:hover { color: white; }
+        .modal-title {
+            margin-top: 0;
+            font-size: 1.8rem;
+            text-align: center;
+            border-bottom: 1px solid #3a3a3c;
+            padding-bottom: 10px;
+        }
+        .modal h3 {
+            font-size: 1.1rem;
+            margin-top: 15px;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+        .modal p, .modal li {
+            color: #d7dadc;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .modal ul {
+            padding-left: 20px;
+            margin-bottom: 20px;
+        }
+        .modal li {
+            margin-bottom: 8px;
+        }
+        .example-row {
+            display: flex;
+            gap: 5px;
+            margin: 10px 0;
+        }
+        .example-tile {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #3a3a3c;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
     </style>
 </head>
 <body>
 
     <header>
         <h1>CLUTCHLE</h1>
-        <p class="subtitle">Find clues for 5 rounds. Guess the secret word on the 6th try to win. Get it early or fail the final round, and you lose.</p>
+        <p class="subtitle">Find clues for 5 rounds. Clutch the win on the 6th.</p>
+        <button id="help-btn" onclick="openModal()">❓</button>
     </header>
 
     <div id="stats-container">
@@ -188,6 +284,52 @@
 
     <div id="keyboard"></div>
 
+    <div id="rules-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <h2 class="modal-title">How To Play</h2>
+            
+            <p>Welcome to <strong>Clutchle</strong>! This is a high-stakes twist on traditional word games.</p>
+            
+            <h3>The Objective:</h3>
+            <p>You must find the secret 5-letter word on the <strong>6th (final) attempt</strong>. If you solve it early, or fail to find it on the last try, you lose!</p>
+
+            <h3>The Rules:</h3>
+            <ul>
+                <li><strong>Guesses 1–5:</strong> Use these rounds as "intelligence gathering" to discover green and yellow letter clues. Try to find letters without accidentally guessing the exact secret word!</li>
+                <li><strong>Guess 6:</strong> You must clutch the win by submitting the correct secret word.</li>
+            </ul>
+
+            <h3>Clue Examples:</h3>
+            <div class="example-row">
+                <div class="example-tile correct">C</div>
+                <div class="example-tile">L</div>
+                <div class="example-tile">U</div>
+                <div class="example-tile">T</div>
+                <div class="example-tile">H</div>
+            </div>
+            <p><strong>C</strong> is in the word and in the correct spot.</p>
+
+            <div class="example-row">
+                <div class="example-tile">S</div>
+                <div class="example-tile present">H</div>
+                <div class="example-tile">A</div>
+                <div class="example-tile">R</div>
+                <div class="example-tile">E</div>
+            </div>
+            <p><strong>H</strong> is in the word but in the wrong spot.</p>
+
+            <div class="example-row">
+                <div class="example-tile early-lose">W</div>
+                <div class="example-tile early-lose">O</div>
+                <div class="example-tile early-lose">R</div>
+                <div class="example-tile early-lose">D</div>
+                <div class="example-tile early-lose">S</div>
+            </div>
+            <p>Red tiles indicate an <strong>Instant Early Loss</strong> (finding the target word before Round 6).</p>
+        </div>
+    </div>
+
     <script>
         let dictionary = []; 
         let targetWord = "";
@@ -197,7 +339,6 @@
         let gameOver = false;
         let isRevealing = false;
         
-        // Track the grid grid matrix states for share formatting
         let guessGridStates = [];
 
         // Massive Curated Answer Pool (520 Common Words)
@@ -277,6 +418,7 @@
         const messageEl = document.getElementById("message");
         const endGameControls = document.getElementById("end-game-controls");
         const countdownEl = document.getElementById("countdown");
+        const rulesModal = document.getElementById("rules-modal");
 
         let stats = JSON.parse(localStorage.getItem("clutchle_stats")) || { played: 0, wins: 0, losses: 0, lastPlayedDate: "" };
 
@@ -305,10 +447,32 @@
             return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
         }
 
+        // --- Modal Control Functions ---
+        function openModal() {
+            rulesModal.style.display = "flex";
+        }
+
+        function closeModal() {
+            rulesModal.style.display = "none";
+        }
+
+        // Close modal when clicking anywhere outside of the actual modal box
+        window.onclick = function(event) {
+            if (event.target === rulesModal) {
+                closeModal();
+            }
+        }
+
         function initGame() {
             updateStatsUI();
             buildGrid();
             buildKeyboard();
+
+            // Open modal automatically for first-time players
+            if (!localStorage.getItem("clutchle_returning_player")) {
+                openModal();
+                localStorage.setItem("clutchle_returning_player", "true");
+            }
 
             const todayStr = getTodayString();
             let seed = 0;
@@ -401,7 +565,6 @@
             let currentRow = grid.children[attempts - 1];
             
             if (currentGuess === targetWord && attempts < maxAttempts) {
-                // Record instant early-loss row pattern
                 guessGridStates.push(Array(5).fill("early-lose"));
                 for (let i = 0; i < 5; i++) currentRow.children[i].classList.add("early-lose");
                 messageEl.style.color = "#ba3c3c";
@@ -514,12 +677,11 @@
             setInterval(updateTimer, 1000);
         }
 
-        // --- Custom Score Share Logic ---
+        // --- Custom Native OS Share Logic ---
         function shareScore() {
             const today = new Date();
             const dateFormatted = `${today.getMonth() + 1}/${today.getDate()}`;
             
-            // Build the grid share string using classic emojis
             let emojiGrid = "";
             guessGridStates.forEach(row => {
                 let emojiRow = "";
@@ -532,25 +694,37 @@
                 emojiGrid += emojiRow + "\n";
             });
 
-            // Decide result text
             const finalRow = guessGridStates[guessGridStates.length - 1];
             const hasWon = finalRow && finalRow.every(status => status === "correct") && guessGridStates.length === 6;
             const scoreLabel = hasWon ? "6/6 (CLUTCHED!)" : "X/6";
 
+            const shareTitle = "Clutchle Score";
             const shareText = `Clutchle ${dateFormatted} - ${scoreLabel}\n\n${emojiGrid}\nPlay here: https://rushanmehta.github.io/clutchle/`;
 
-            // Write straight to clipboard
-            navigator.clipboard.writeText(shareText)
-                .then(() => {
-                    const originalText = document.getElementById("share-btn").innerHTML;
-                    document.getElementById("share-btn").innerHTML = "COPIED TO CLIPBOARD! ✔️";
-                    setTimeout(() => {
-                        document.getElementById("share-btn").innerHTML = originalText;
-                    }, 2500);
+            // Use Native Mobile Share if supported (Safari/Chrome Mobile)
+            if (navigator.share) {
+                navigator.share({
+                    title: shareTitle,
+                    text: shareText
                 })
                 .catch(err => {
-                    alert("Unable to copy automatically. Copy this layout: \n\n" + shareText);
+                    // Fail gracefully if they dismiss the drawer
+                    console.log("Share dismissed or failed: ", err);
                 });
+            } else {
+                // Fallback to clipboard for browsers/desktops without Native Web Share API
+                navigator.clipboard.writeText(shareText)
+                    .then(() => {
+                        const originalText = document.getElementById("share-btn").innerHTML;
+                        document.getElementById("share-btn").innerHTML = "COPIED TO CLIPBOARD! ✔️";
+                        setTimeout(() => {
+                            document.getElementById("share-btn").innerHTML = originalText;
+                        }, 2500);
+                    })
+                    .catch(err => {
+                        alert("Unable to copy automatically. Copy this layout: \n\n" + shareText);
+                    });
+            }
         }
 
         loadDictionary();
