@@ -42,14 +42,41 @@
         header {
             border-bottom: 1px solid #3a3a3c;
             width: 100%;
-            text-align: center;
             max-width: 500px;
             padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             position: relative;
         }
-        h1 { margin: 10px 0 5px 0; font-size: 2.5rem; letter-spacing: 2px; }
+        
+        /* Layout for Logo and Title */
+        .title-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px auto 5px auto;
+        }
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+        h1 { 
+            margin: 0; 
+            font-size: 2.5rem; 
+            letter-spacing: 2px; 
+            line-height: 1;
+        }
+        .subtitle-container {
+            width: 100%;
+            text-align: center;
+            max-width: 500px;
+            margin-bottom: 10px;
+        }
         .subtitle {
-            margin: 0;
+            margin: 5px 0 0 0;
             font-size: 0.95rem;
             color: #818384;
             line-height: 1.4;
@@ -58,9 +85,6 @@
         
         /* Help Button in Header */
         #help-btn {
-            position: absolute;
-            right: 10px;
-            top: 15px;
             background: none;
             border: none;
             color: #818384;
@@ -68,6 +92,9 @@
             cursor: pointer;
             padding: 5px;
             transition: color 0.2s;
+            position: absolute;
+            right: 10px;
+            top: 18px;
         }
         #help-btn:hover { color: white; }
 
@@ -199,7 +226,6 @@
             align-items: center;
             padding: 15px;
             box-sizing: border-box;
-            /* Allow the modal overlay to capture scrolls on small screens */
             overflow-y: auto; 
         }
         .modal-content {
@@ -212,10 +238,10 @@
             position: relative;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             box-sizing: border-box;
-            /* Scroll internally if the content exceeds mobile height */
             max-height: 90vh;
             overflow-y: auto;
         }
+        /* Static absolute Close Button locked strictly to the top right */
         .close-modal {
             position: absolute;
             right: 18px;
@@ -225,11 +251,7 @@
             font-weight: bold;
             cursor: pointer;
             transition: color 0.2s;
-            /* Stay visible when scrolling inside modal */
-            position: sticky;
-            float: right;
-            margin-top: -10px;
-            margin-right: -10px;
+            z-index: 1010;
         }
         .close-modal:hover { color: white; }
         .modal-title {
@@ -238,7 +260,6 @@
             text-align: center;
             border-bottom: 1px solid #3a3a3c;
             padding-bottom: 10px;
-            clear: both;
         }
         .modal h3 {
             font-size: 1.1rem;
@@ -278,10 +299,16 @@
 <body>
 
     <header>
-        <h1>CLUTCHLE</h1>
-        <p class="subtitle">Find clues for 5 rounds. Clutch the win on the 6th.</p>
+        <div class="title-container">
+            <img src="favicon.png" alt="Clutchle Logo" class="header-logo">
+            <h1>CLUTCHLE</h1>
+        </div>
         <button id="help-btn" onclick="openModal()">❓</button>
     </header>
+    
+    <div class="subtitle-container">
+        <p class="subtitle">Find clues for 5 rounds. Clutch the win on the 6th.</p>
+    </div>
 
     <div id="stats-container">
         <div class="stat-box"><div class="stat-val" id="stat-played">0</div><div class="stat-lbl">Played</div></div>
@@ -470,9 +497,11 @@
             document.body.classList.add("modal-open"); // Freeze background
         }
 
+        // Handles closing and scrolling viewport back to the top automatically
         function closeModal() {
             rulesModal.style.display = "none";
             document.body.classList.remove("modal-open"); // Unfreeze background
+            document.querySelector(".modal-content").scrollTop = 0; // Reset scroll position for next open
         }
 
         // Close modal when clicking anywhere outside of the actual modal box
