@@ -395,7 +395,7 @@
         let guessGridStates = [];
 
         // Massive Curated Answer Pool
-        const commonAnswers = [
+        const rawAnswers = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
             "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
             "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
@@ -465,6 +465,9 @@
             "SICKLY", "SIDE", "SIEGE", "SIGHT", "SIGMA", "SIGN", "SILENT", "SILK", 
             "SILKY", "SILLY", "SILVER", "SIMPLY", "SINCE", "SINFUL", "SING", "SINGER"
         ];
+
+        // This instantly filters out anything that isn't exactly 5 letters long!
+        const commonAnswers = rawAnswers.filter(word => word.length === 5);
 
         const grid = document.getElementById("grid");
         const keyboard = document.getElementById("keyboard");
