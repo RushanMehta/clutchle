@@ -467,8 +467,23 @@
             "SILKY", "SILLY", "SILVER", "SIMPLY", "SINCE", "SINFUL", "SING", "SINGER"
         ];
 
-        // This instantly filters out anything that isn't exactly 5 letters long!
-        const commonAnswers = rawAnswers.filter(word => word.length === 5);
+        // 1. Keeps only 5-letter words AND excludes words ending in 'S'
+        const commonAnswers = rawAnswers.filter(word => word.length === 5 && !word.endsWith("S"));
+
+        // 2. Daily Pseudo-Random Selection Function
+        function getDailySecretWord() {
+            const today = new Date();
+            // Creates a unique number for each day (e.g. 20260723)
+            const dateNum = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
+            
+            // A simple math scramble to pick a pseudo-random index that changes every day
+            const randomIndex = Math.abs(Math.sin(dateNum) * 10000) % commonAnswers.length;
+            
+            return commonAnswers[Math.floor(randomIndex)];
+        }
+
+        // Call this function where you set your target word!
+        const targetWord = getDailySecretWord();
 
         const grid = document.getElementById("grid");
         const keyboard = document.getElementById("keyboard");
