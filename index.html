@@ -3,14 +3,13 @@
 <head>
   <meta name="google-site-verification" content="xaZdUAhfk7KdXcvzDqaaWCt0LZgyEK7A2ztII2Ju6yU" />
   <meta name="google-site-verification" content="wVwA1IVgjf32HsJdWtJMU8EDhoyQ61gpcz9UbeR_dZg" />
-<script>
-  const rulesModal = document.getElementById("rules-modal");
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
 
-  gtag('config', 'G-26VH6FZP8B');
-</script>
+    gtag('config', 'G-26VH6FZP8B');
+  </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
@@ -43,7 +42,6 @@
             margin: 0;
             padding: 10px;
         }
-        /* Class to prevent background scrolling when modal is open */
         body.modal-open {
             overflow: hidden;
             height: 100vh;
@@ -60,7 +58,6 @@
             position: relative;
         }
         
-        /* Layout for Logo and Title */
         .title-container {
             display: flex;
             align-items: center;
@@ -93,7 +90,6 @@
             font-weight: normal;
         }
         
-        /* Help Button in Header */
         #help-btn {
             background: none;
             border: none;
@@ -192,7 +188,6 @@
             text-align: center;
         }
         
-        /* Share & Timer Container */
         #end-game-controls {
             display: none;
             flex-direction: column;
@@ -222,7 +217,6 @@
         }
         #countdown { color: #538d4e; }
 
-        /* --- Improved Modal Styles --- */
         .modal {
             display: none;
             position: fixed;
@@ -251,7 +245,6 @@
             max-height: 90vh;
             overflow-y: auto;
         }
-        /* Static absolute Close Button locked strictly to the top right */
         .close-modal {
             position: absolute;
             right: 18px;
@@ -338,7 +331,7 @@
 
     <div id="keyboard"></div>
 
-    <div id="rules-modal" class="modal"></div>
+    <div id="rules-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <h2 class="modal-title">How To Play</h2>
@@ -385,18 +378,26 @@
     </div>
 
     <script>
+        // DOM Elements
+        const grid = document.getElementById("grid");
+        const keyboard = document.getElementById("keyboard");
+        const messageEl = document.getElementById("message");
+        const rulesModal = document.getElementById("rules-modal");
+        const endGameControls = document.getElementById("end-game-controls");
+        const countdownEl = document.getElementById("countdown");
+
         let dictionary = []; 
         const maxAttempts = 6;
         let attempts = 0;
         let currentGuess = "";
         let gameOver = false;
         let isRevealing = false;
+        let targetWord = "";
         
         let guesses = [];
         let guessGridStates = [];
 
-        // Massive Curated Answer Pool
-       const rawAnswers = [
+        const rawAnswers = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
             "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
             "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
@@ -418,32 +419,32 @@
             "DONKEY", "DOUBT", "DOZEN", "EAGLE", "EARLY", "EMPTY", "ENJOY", "EQUAL", 
             "ERROR", "EVENT", "EVERY", "EXTRA", "FAINT", "FALSE", "FANCY", "FATAL", 
             "FEVER", "FIFTH", "FIRST", "FIXED", "FLAME", "FLASH", "FLESH", "FLOAT", 
-            "FLOOD", "FLUID", "FLYER", "FOCUS", "FORCE", "FORTH", "FORTY", "FORUM", 
-            "FOUND", "FRAME", "FRESH", "FRONT", "FRUIT", "FUNNY", "GIANT", "GIVEN", 
-            "GLASS", "GLOBE", "GLORY", "GLOVE", "GRACE", "GRADE", "GRAND", "GRANT", 
+            "FLOOD", "FLUID", "FLYER", "FORTH", "FORTY", "FORUM", 
+            "FOUND", "FRESH", "FUNNY", "GIANT", "GIVEN", 
+            "GLOBE", "GLORY", "GRACE", "GRADE", "GRAND", "GRANT", 
             "GRASS", "GRAVE", "GREAT", "GREEN", "GREET", "GRIEF", "GROSS", "GROUP", 
             "GROWN", "GUARD", "GUESS", "GUEST", "GUIDE", "HABIT", "HAPPY", "HARSH", 
             "HEART", "HEAVY", "HELLO", "HONEY", "HONOR", "HORSE", "HOTEL", "HUMAN", 
             "HUMOR", "IDEAL", "IMAGE", "IMPLY", "INNER", "INPUT", "IRONY", "ISSUE", 
             "ITEMS", "IVORY", "JACKET", "JOINT", "JUDGE", "JUICY", "LEMON", "LEVEL", 
-            "LEVER", "LIGHT", "LIMIT", "LINER", "LOGIC", "LOOSE", "LOVER", "LOWER", 
+            "LEVER", "LIMIT", "LINER", "LOGIC", "LOOSE", "LOVER", "LOWER", 
             "LUCKY", "LUNCH", "LYRIC", "MAGIC", "MAJOR", "MAKER", "MARCH", "MATCH", 
-            "MAYOR", "MEANSM", "MEDAL", "MEDIA", "MERCY", "MERIT", "METAL", "MICRO", 
+            "MAYOR", "MEDAL", "MEDIA", "MERCY", "MERIT", "METAL", "MICRO", 
             "MIDST", "MIGHT", "MINOR", "MINUS", "MIXED", "MODEL", "MODEM", "MOIST", 
-            "MONEY", "MONTH", "MORAL", "MOTOR", "MOUNT", "MOUSE", "MOUTH", "MOVIE", 
+            "MONTH", "MORAL", "MOTOR", "MOUNT", "MOUSE", "MOUTH", "MOVIE", 
             "MUSIC", "MYTHS", "NAKED", "NASTY", "NAVAL", "NEEDS", "NEVER", "NEWER", 
-            "NIGHT", "NINTH", "NOBLE", "NOISE", "NORTH", "NOTED", "NOVEL", "NURSE", 
-            "OCCUR", "OCEAN", "OFFER", "OFTEN", "ORDER", "OTHER", "OUTER", "OWNER", 
+            "NINTH", "NOBLE", "NOISE", "NORTH", "NOTED", "NOVEL", "NURSE", 
+            "OCCUR", "OFFER", "OFTEN", "ORDER", "OTHER", "OUTER", "OWNER", 
             "PANEL", "PAPER", "PARTY", "PATCH", "PATHS", "PATIO", "PAUSE", "PEACE", 
             "PEACH", "PEARL", "PEDAL", "PHASE", "PHONE", "PHOTO", "PIANO", "PICKY", 
-            "PILOT", "PITCH", "PIXEL", "PIZZA", "PLACE", "PLAIN", "PLANE", "PLANT", 
+            "PILOT", "PITCH", "PIXEL", "PIZZA", "PLACE", "PLAIN", "PLANE", 
             "PLATE", "PLAYS", "PLAZA", "PLEAD", "PLUCK", "POEMS", "POINT", "POKER", 
             "POLAR", "POLES", "POLIO", "POLITE", "POLYP", "PONEY", "POOLS", "PORCH", 
             "PORTS", "POUND", "POWER", "PRESS", "PRICE", "PRIDE", "PRIME", "PRINT", 
-            "PRIOR", "PRIZE", "PROBE", "PROMO", "PROUD", "PROVE", "PROXYS", "PULSE", 
-            "PUNCH", "PUPIL", "PUPPY", "PURELY", "PURSE", "QUEEN", "QUERY", "QUEST", 
-            "QUEUE", "QUICK", "QUIET", "QUILT", "QUITE", "QUOTA", "QUOTE", "RACING", 
-            "RADAR", "RADIO", "RAILS", "RAINY", "RAISE", "RALLY", "RAMCH", "RANGE", 
+            "PRIOR", "PRIZE", "PROBE", "PROMO", "PROUD", "PROVE", "PULSE", 
+            "PUNCH", "PUPIL", "PUPPY", "PURSE", "QUERY", "QUEST", 
+            "QUEUE", "QUICK", "QUIET", "QUILT", "QUITE", "QUOTA", "QUOTE", 
+            "RADAR", "RAILS", "RAINY", "RAISE", "RALLY", "RANGE", 
             "RAPID", "RATIO", "RAZOR", "REACH", "REACT", "READY", "REALM", "REBEL", 
             "REFER", "REIGN", "RELAX", "REPLY", "RESET", "RESIN", "RETRO", "RIDER", 
             "RIDGE", "RIFLE", "RIGHT", "RIGID", "RINGS", "RINSE", "RISKY", "RIVAL", 
@@ -455,22 +456,20 @@
             "SAVED", "SAVIOR", "SAVOR", "SCALE", "SCALP", "SCANT", "SCARE", "SCARF", 
             "SCARY", "SCENE", "SCENT", "SCOLD", "SCOOP", "SCOPE", "SCORE", "SCORN", 
             "SCOUT", "SCRAP", "SCREW", "SCRIP", "SCUBA", "SEALS", "SEAM", "SEATS", 
-            "SECTOR", "SEDAN", "SEEDS", "SEEDY", "SEEKER", "SEEMS", "SEGMENT", "SEIZE", 
-            "SELLER", "SENIOR", "SENSE", "SERUM", "SERVE", "SETUP", "SEVEN", "SEVERE", 
-            "SHACK", "SHADE", "SHADO", "SHADY", "SHAFT", "SHAKE", "SHAKY", "SHALE", 
+            "SEDAN", "SEEDS", "SEEDY", "SEEMS", "SEIZE", 
+            "SENSE", "SERUM", "SERVE", "SETUP", "SEVEN", 
+            "SHACK", "SHADE", "SHADY", "SHAFT", "SHAKE", "SHAKY", "SHALE", 
             "SHALL", "SHAME", "SHANK", "SHAPE", "SHARE", "SHARK", "SHARP", "SHAVE", 
             "SHAWL", "SHEAR", "SHED", "SHEEP", "SHEER", "SHEET", "SHELF", "SHELL", 
-            "SHIFT", "SHINE", "SHINY", "SHIPS", "SHIRT", "SHOCK", "SHOES", "SHOON", 
+            "SHIFT", "SHINE", "SHINY", "SHIPS", "SHIRT", "SHOCK", "SHOES", 
             "SHOOT", "SHOPS", "SHORE", "SHORT", "SHOT", "SHOUT", "SHOVE", "SHOWN", 
             "SHOWY", "SHRED", "SHREW", "SHRUB", "SHRUG", "SHUN", "SHUT", "SHYLY", 
-            "SICKLY", "SIDE", "SIEGE", "SIGHT", "SIGMA", "SIGN", "SILENT", "SILK", 
-            "SILKY", "SILLY", "SILVER", "SIMPLY", "SINCE", "SINFUL", "SING", "SINGER"
+            "SIDE", "SIEGE", "SIGHT", "SIGMA", "SIGN", "SILK", 
+            "SILKY", "SILLY", "SILVER", "SINCE", "SING"
         ];
 
-        // 1. Filter array down to valid 5-letter words not ending in S
         const commonAnswers = rawAnswers.filter(word => word.length === 5 && !word.endsWith("S"));
 
-        // 2. Daily date string formatted as YYYY-MM-DD
         function getTodayString() {
             const d = new Date();
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -478,7 +477,6 @@
 
         const todayKey = getTodayString();
 
-        // 3. Pseudo-random generator seed derived from the date
         function getDailySecretWord() {
             const today = new Date();
             const dateNum = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
@@ -486,9 +484,6 @@
             return commonAnswers[randomIndex];
         }
 
-        const targetWord = getDailySecretWord();
-
-        // 4. Persistence & local storage setup
         let stats = JSON.parse(localStorage.getItem("clutchle_stats")) || { 
             played: 0, 
             wins: 0, 
@@ -502,7 +497,6 @@
             isGameOver: false
         };
 
-        // Reset local state if a new calendar day has started
         if (gameState.date !== todayKey) {
             gameState = {
                 date: todayKey,
@@ -511,7 +505,6 @@
             };
             localStorage.setItem("clutchle_state", JSON.stringify(gameState));
         }
-       
 
         async function loadDictionary() {
             showMessage("Loading dictionary...");
@@ -533,25 +526,17 @@
             document.getElementById("stat-losses").textContent = stats.losses;
         }
 
-        function getTodayString() {
-            const d = new Date();
-            return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-        }
-
-        // --- Modal Control Functions ---
         function openModal() {
             rulesModal.style.display = "flex";
-            document.body.classList.add("modal-open"); // Freeze background
+            document.body.classList.add("modal-open");
         }
 
-        // Handles closing and scrolling viewport back to the top automatically
         function closeModal() {
             rulesModal.style.display = "none";
-            document.body.classList.remove("modal-open"); // Unfreeze background
-            document.querySelector(".modal-content").scrollTop = 0; // Reset scroll position for next open
+            document.body.classList.remove("modal-open");
+            document.querySelector(".modal-content").scrollTop = 0;
         }
 
-        // Close modal when clicking anywhere outside of the actual modal box
         window.onclick = function(event) {
             if (event.target === rulesModal) {
                 closeModal();
@@ -563,27 +548,20 @@
             buildGrid();
             buildKeyboard();
 
-            // Open modal automatically for first-time players
             if (!localStorage.getItem("clutchle_returning_player")) {
                 openModal();
                 localStorage.setItem("clutchle_returning_player", "true");
             }
 
-            const todayStr = getTodayString();
-            let seed = 0;
-            for (let i = 0; i < todayStr.length; i++) seed += todayStr.charCodeAt(i);
-            const wordIndex = seed % commonAnswers.length;
-            targetWord = commonAnswers[wordIndex];
+            targetWord = getDailySecretWord();
 
-            // --- Load Saved Game State ---
             const savedState = JSON.parse(localStorage.getItem("clutchle_game_state"));
-            if (savedState && savedState.date === todayStr) {
+            if (savedState && savedState.date === todayKey) {
                 guesses = savedState.guesses;
                 guessGridStates = savedState.statuses;
                 attempts = savedState.attempts;
                 gameOver = savedState.gameOver;
                 
-                // Repopulate active board from storage
                 for (let r = 0; r < guesses.length; r++) {
                     let word = guesses[r];
                     let statuses = guessGridStates[r];
@@ -596,7 +574,6 @@
                     }
                 }
                 
-                // If game was completed today, show state and buttons immediately
                 if (gameOver) {
                     const finalRow = guessGridStates[guessGridStates.length - 1];
                     const hasWon = finalRow && finalRow.every(status => status === "correct") && guessGridStates.length === 6;
@@ -614,7 +591,6 @@
                     revealControls();
                 }
             } else {
-                // If a new day occurs, clear out obsolete game board progress
                 localStorage.removeItem("clutchle_game_state");
                 guesses = [];
                 guessGridStates = [];
@@ -625,7 +601,7 @@
 
         function saveGameState() {
             const state = {
-                date: getTodayString(),
+                date: todayKey,
                 guesses: guesses,
                 statuses: guessGridStates,
                 gameOver: gameOver,
@@ -679,7 +655,6 @@
         });
 
         function handleInput(key) {
-            // Ignore keyboard inputs if modal is open, game is over, or revealing animations are running
             if (document.body.classList.contains("modal-open") || gameOver || isRevealing || dictionary.length === 0 || attempts >= maxAttempts) return;
             let currentRow = grid.children[attempts];
 
@@ -776,7 +751,7 @@
                 recordResult(false);
             } else {
                 currentGuess = "";
-                saveGameState(); // Save incomplete board progress
+                saveGameState();
             }
         }
 
@@ -784,8 +759,7 @@
             stats.played++;
             if (isWin) stats.wins++;
             else stats.losses++;
-            stats.lastPlayedDate = getTodayString();
-            
+            stats.lastPlayedDate = todayKey;
             localStorage.setItem("clutchle_stats", JSON.stringify(stats));
             updateStatsUI();
             gameOver = true;
@@ -829,7 +803,6 @@
             setInterval(updateTimer, 1000);
         }
 
-        // --- Custom Native OS Share Logic ---
         function shareScore() {
             const today = new Date();
             const dateFormatted = `${today.getMonth() + 1}/${today.getDate()}`;
@@ -875,7 +848,7 @@
                     });
             }
         }
-const messageEl = document.getElementById("message");
+
         loadDictionary();
     </script>
 </body>
