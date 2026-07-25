@@ -396,7 +396,7 @@
         let guessGridStates = [];
 
         // Massive Curated Answer Pool
-        const rawAnswers = [
+       const rawAnswers = [
             "APPLE", "BEACH", "CHIEF", "DRIVE", "EARTH", "FLUTE", "GRAPE", "HOUSE", 
             "INDEX", "JUICE", "KNIFE", "LIGHT", "MONEY", "NIGHT", "OCEAN", "PLANT", 
             "QUEEN", "RADIO", "SNAKE", "TRAIN", "UNDER", "VOICE", "WATER", "YOUTH",
@@ -484,13 +484,6 @@
 
         // Call this function where you set your target word!
         const targetWord = getDailySecretWord();
-
-        const grid = document.getElementById("grid");
-        const keyboard = document.getElementById("keyboard");
-        const messageEl = document.getElementById("message");
-        const endGameControls = document.getElementById("end-game-controls");
-        const countdownEl = document.getElementById("countdown");
-        const rulesModal = document.getElementById("rules-modal");
 
         let stats = JSON.parse(localStorage.getItem("clutchle_stats")) || { played: 0, wins: 0, losses: 0, lastPlayedDate: "" };
 
